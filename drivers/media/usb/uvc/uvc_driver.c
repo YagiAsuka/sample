@@ -122,6 +122,11 @@ static struct uvc_format_desc uvc_fmts[] = {
 		.guid		= UVC_GUID_FORMAT_H264,
 		.fcc		= V4L2_PIX_FMT_H264,
 	},
+	{
+		.name		= "MPEG2 TS",
+		.guid		= UVC_GUID_FORMAT_MPEG,
+		.fcc		= V4L2_PIX_FMT_MPEG,
+	},
 };
 
 /* ------------------------------------------------------------------------
@@ -417,6 +422,31 @@ static int uvc_parse_format(struct uvc_device *dev,
 		break;
 
 	case UVC_VS_FORMAT_MPEG2TS:
+		n = dev->uvc_version >= 0x0110 ? 23 : 7;
+		if (buflen < n) {
+			uvc_trace(UVC_TRACE_DESCR, "device %d videostreaming "
+			       "interface %d FORMAT error\n",
+			       dev->udev->devnum,
+			       alts->desc.bInterfaceNumber);
+			return -EINVAL;
+		}
+
+		strlcpy(format->name, "MPEG2 TS", sizeof(format->name));
+		format->fcc = V4L2_PIX_FMT_MPEG;
+		format->flags = UVC_FMT_FLAG_COMPRESSED | UVC_FMT_FLAG_STREAM;
+		format->bpp = 0;
+		ftype = 0;
+
+		/* Create a dummy frame descriptor. */
+		frame = &format->frame[0];
+		memset(&format->frame[0], 0, sizeof(format->frame[0]));
+		frame->bFrameIntervalType = 1;
+		frame->dwDefaultFrameInterval = 1;
+		frame->dwFrameInterval = *intervals;
+		*(*intervals)++ = 1;
+		format->nframes = 1;
+		break;
+
 	case UVC_VS_FORMAT_STREAM_BASED:
 		/* Not supported yet. */
 	default:
@@ -683,15 +713,16 @@ static int uvc_parse_streaming(struct uvc_device *dev,
 			break;
 
 		case UVC_VS_FORMAT_DV:
-			/* DV format has no frame descriptor. We will create a
-			 * dummy frame descriptor with a dummy frame interval.
+		case UVC_VS_FORMAT_MPEG2TS:
+			/* DV and MPEG2TS formats have no frame descriptor. We
+			 * will create a dummy frame descriptor with a dummy
+			 * frame interval.
 			 */
 			nformats++;
 			nframes++;
 			nintervals++;
 			break;
 
-		case UVC_VS_FORMAT_MPEG2TS:
 		case UVC_VS_FORMAT_STREAM_BASED:
 			uvc_trace(UVC_TRACE_DESCR, "device %d videostreaming "
 				"interface %d FORMAT %u is not supported.\n",
@@ -743,6 +774,7 @@ static int uvc_parse_streaming(struct uvc_device *dev,
 		switch (buffer[2]) {
 		case UVC_VS_FORMAT_UNCOMPRESSED:
 		case UVC_VS_FORMAT_MJPEG:
+		case UVC_VS_FORMAT_MPEG2TS:
 		case UVC_VS_FORMAT_DV:
 		case UVC_VS_FORMAT_FRAME_BASED:
 			format->frame = frame;
