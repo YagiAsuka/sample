@@ -471,8 +471,10 @@ struct uvc_streaming {
 	dma_addr_t urb_dma[UVC_URBS];
 	unsigned int urb_size;
 
-	__u32 sequence;
+	bool use_eof;
+	bool use_fid;
 	__u8 last_fid;
+	__u32 sequence;
 
 	/* debugfs */
 	struct dentry *debugfs_dir;

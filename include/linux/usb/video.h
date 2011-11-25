@@ -177,6 +177,17 @@
 #define UVC_CONTROL_CAP_AUTOUPDATE			(1 << 3)
 #define UVC_CONTROL_CAP_ASYNCHRONOUS			(1 << 4)
 
+/* 4.3.1.1. Video Probe and Commit Controls */
+#define UVC_PC_HINT_FRAME_INTERVAL			(1 << 0)
+#define UVC_PC_HINT_KEY_FRAME_RATE			(1 << 1)
+#define UVC_PC_HINT_P_FRAME_RATE			(1 << 2)
+#define UVC_PC_HINT_COMP_QUALITY			(1 << 3)
+#define UVC_PC_HINT_COMP_WINDOW_SIZE			(1 << 4)
+
+#define UVC_PC_FRAMING_INFO_FID				(1 << 0)
+#define UVC_PC_FRAMING_INFO_EOF				(1 << 1)
+
+
 /* ------------------------------------------------------------------------
  * UVC structures
  */

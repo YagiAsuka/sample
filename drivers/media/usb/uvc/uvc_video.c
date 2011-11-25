@@ -966,7 +966,7 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	/* Increase the sequence number regardless of any buffer states, so
 	 * that discontinuous sequence numbers always indicate lost frames.
 	 */
-	if (stream->last_fid != fid) {
+	if (stream->use_fid && stream->last_fid != fid) {
 		stream->sequence++;
 		if (stream->sequence)
 			uvc_video_stats_update(stream);
@@ -1001,11 +1001,11 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	if (buf->state != UVC_BUF_STATE_ACTIVE) {
 		struct timespec ts;
 
-		if (fid == stream->last_fid) {
+		if (stream->use_fid && fid == stream->last_fid) {
 			uvc_trace(UVC_TRACE_FRAME, "Dropping payload (out of "
 				"sync).\n");
 			if ((stream->dev->quirks & UVC_QUIRK_STREAM_NO_FID) &&
-			    (data[1] & UVC_STREAM_EOF))
+			    stream->use_eof && (data[1] & UVC_STREAM_EOF))
 				stream->last_fid ^= UVC_STREAM_FID;
 			return -ENODATA;
 		}
@@ -1039,7 +1039,7 @@ static int uvc_video_decode_start(struct uvc_streaming *stream,
 	 * avoids detecting end of frame conditions at FID toggling if the
 	 * previous payload had the EOF bit set.
 	 */
-	if (fid != stream->last_fid && buf->bytesused != 0) {
+	if (stream->use_fid && fid != stream->last_fid && buf->bytesused != 0) {
 		uvc_trace(UVC_TRACE_FRAME, "Frame complete (FID bit "
 				"toggled).\n");
 		buf->state = UVC_BUF_STATE_READY;
@@ -1077,13 +1077,17 @@ static void uvc_video_decode_data(struct uvc_streaming *stream,
 static void uvc_video_decode_end(struct uvc_streaming *stream,
 		struct uvc_buffer *buf, const __u8 *data, int len)
 {
+	if (!stream->use_eof)
+		return;
+
 	/* Mark the buffer as done if the EOF marker is set. */
 	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
 		uvc_trace(UVC_TRACE_FRAME, "Frame complete (EOF found).\n");
 		if (data[0] == len)
 			uvc_trace(UVC_TRACE_FRAME, "EOF in empty payload.\n");
 		buf->state = UVC_BUF_STATE_READY;
-		if (stream->dev->quirks & UVC_QUIRK_STREAM_NO_FID)
+		if ((stream->dev->quirks & UVC_QUIRK_STREAM_NO_FID) &&
+		    stream->use_fid)
 			stream->last_fid ^= UVC_STREAM_FID;
 	}
 }
@@ -1575,6 +1579,18 @@ static int uvc_init_video(struct uvc_streaming *stream, gfp_t gfp_flags)
 	struct usb_host_endpoint *ep;
 	unsigned int i;
 	int ret;
+
+	if ((stream->cur_format->flags & UVC_FMT_FLAG_STREAM) &&
+	    !(stream->ctrl.bmFramingInfo & UVC_PC_FRAMING_INFO_EOF))
+		stream->use_eof = false;
+	else
+		stream->use_eof = true;
+
+	if ((stream->cur_format->flags & UVC_FMT_FLAG_STREAM) &&
+	    !(stream->ctrl.bmFramingInfo & UVC_PC_FRAMING_INFO_FID))
+		stream->use_fid = false;
+	else
+		stream->use_fid = true;
 
 	stream->sequence = -1;
 	stream->last_fid = -1;
