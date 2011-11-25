@@ -247,7 +247,7 @@ static int uvc_v4l2_try_format(struct uvc_streaming *stream,
 	fmt->fmt.pix.height = frame->wHeight;
 	fmt->fmt.pix.field = V4L2_FIELD_NONE;
 	fmt->fmt.pix.bytesperline = format->bpp * frame->wWidth / 8;
-	fmt->fmt.pix.sizeimage = probe->dwMaxVideoFrameSize;
+	fmt->fmt.pix.sizeimage = uvc_queue_frame_size(format, probe);
 	fmt->fmt.pix.colorspace = format->colorspace;
 	fmt->fmt.pix.priv = 0;
 
@@ -284,7 +284,7 @@ static int uvc_v4l2_get_format(struct uvc_streaming *stream,
 	fmt->fmt.pix.height = frame->wHeight;
 	fmt->fmt.pix.field = V4L2_FIELD_NONE;
 	fmt->fmt.pix.bytesperline = format->bpp * frame->wWidth / 8;
-	fmt->fmt.pix.sizeimage = stream->ctrl.dwMaxVideoFrameSize;
+	fmt->fmt.pix.sizeimage = uvc_queue_frame_size(format, &stream->ctrl);
 	fmt->fmt.pix.colorspace = format->colorspace;
 	fmt->fmt.pix.priv = 0;
 

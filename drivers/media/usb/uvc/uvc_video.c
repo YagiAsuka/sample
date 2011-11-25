@@ -1475,7 +1475,7 @@ static int uvc_init_video_isoc(struct uvc_streaming *stream,
 	u32 size;
 
 	psize = uvc_endpoint_max_bpi(stream->dev->udev, ep);
-	size = stream->ctrl.dwMaxVideoFrameSize;
+	size = uvc_queue_frame_size(stream->cur_format, &stream->ctrl);
 
 	npackets = uvc_alloc_urb_buffers(stream, size, psize, gfp_flags);
 	if (npackets == 0)

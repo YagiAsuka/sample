@@ -435,6 +435,7 @@ static int uvc_parse_format(struct uvc_device *dev,
 		format->fcc = V4L2_PIX_FMT_MPEG;
 		format->flags = UVC_FMT_FLAG_COMPRESSED | UVC_FMT_FLAG_STREAM;
 		format->bpp = 0;
+		format->psize = 188;
 		ftype = 0;
 
 		/* Create a dummy frame descriptor. */

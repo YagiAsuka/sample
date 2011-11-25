@@ -36,6 +36,16 @@
  * the driver.
  */
 
+unsigned int uvc_queue_frame_size(const struct uvc_format *format,
+		const struct uvc_streaming_control *ctrl)
+{
+	if (!(format->flags & UVC_FMT_FLAG_STREAM) ||
+	    (ctrl->bmFramingInfo & UVC_PC_FRAMING_INFO_FID))
+		return ctrl->dwMaxVideoFrameSize;
+	else
+		return format->psize * 500;
+}
+
 /* -----------------------------------------------------------------------------
  * videobuf2 queue operations
  */
@@ -53,7 +63,7 @@ static int uvc_queue_setup(struct vb2_queue *vq, const struct v4l2_format *fmt,
 
 	*nplanes = 1;
 
-	sizes[0] = stream->ctrl.dwMaxVideoFrameSize;
+	sizes[0] = uvc_queue_frame_size(stream->cur_format, &stream->ctrl);
 
 	return 0;
 }

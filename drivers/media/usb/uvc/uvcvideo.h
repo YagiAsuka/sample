@@ -312,6 +312,7 @@ struct uvc_format {
 	__u8 colorspace;
 	__u32 fcc;
 	__u32 flags;
+	__u32 psize;
 
 	char name[32];
 
@@ -641,6 +642,8 @@ static inline int uvc_queue_streaming(struct uvc_video_queue *queue)
 {
 	return vb2_is_streaming(&queue->queue);
 }
+unsigned int uvc_queue_frame_size(const struct uvc_format *format,
+		const struct uvc_streaming_control *ctrl);
 
 /* V4L2 interface */
 extern const struct v4l2_file_operations uvc_fops;
